@@ -53,17 +53,24 @@ class PCIeDiagnostics:
         """
         for device in self.pcie_devices:
             print(f"Checking driver for device: {device['name']}")
-            drivers = self.wmi_client.Win32_SystemDriver(DeviceID=device["device_id"])
-            if drivers:
-                for driver in drivers:
-                    print(f"  Driver Name: {driver.Name}")
-                    print(f"  State: {driver.State}")
-                    print(f"  Status: {driver.Status}")
-                    if driver.State != "Running":
-                        print("  Issue: Driver is not running.")
-            else:
-                print("  Issue: No driver found for this device.")
-            print("-" * 40)
+            try:
+                drivers = self.wmi_client.query(
+                f"SELECT * FROM Win32_PnPSignedDriver WHERE DeviceID LIKE '%{device['pnp_device_id']}%'"
+            )            
+                if drivers:
+                    for driver in drivers:
+                        print(f"  Driver Name: {driver.Name}")
+                        print(f"  State: {driver.State}")
+                        print(f"  Status: {driver.Status}")
+                        if driver.State != "Running":
+                            print("  Issue: Driver is not running.")
+                else:
+                    print("  Issue: No driver found for this device.")
+            
+            except Exception as e:
+                print(f"  An error occurred while checking driver status: {e}")
+            finally:
+                print("-&-" * 40)
 
     def check_hardware_errors(self):
         """
@@ -96,6 +103,33 @@ class PCIeDiagnostics:
                 print("  Unable to retrieve power state.")
             print("-" * 40)
 
+    def check_power_status(self):
+        """
+        Check the power status of each PCIe device.
+        """
+        for device in self.pcie_devices:
+            print(f"Checking power status for device: {device['name']}")
+            try:
+                # Check if the device supports power management
+                if hasattr(device, "PowerManagementSupported") and device.PowerManagementSupported:
+                    print("  Power Management: Supported")
+                else:
+                    print("  Power Management: Not Supported")
+
+                # Check the power management capabilities
+                if hasattr(device, "PowerManagementCapabilities") and device.PowerManagementCapabilities:
+                    capabilities = device.PowerManagementCapabilities
+                    print(f"  Power Management Capabilities: {capabilities}")
+                    if 1 in capabilities:
+                        print("  Device is in a low-power state.")
+                    else:
+                        print("  Device is in a normal power state.")
+                else:
+                    print("  Power Management Capabilities: Not Available")
+            except Exception as e:
+                print(f"  An error occurred while checking power status: {e}")
+            print("-" * 40)
+
     def check_event_logs(self):
         """
         Check the event logs for any issues related to PCIe devices.
@@ -112,17 +146,26 @@ class PCIeDiagnostics:
 
     def run_diagnostic_command(self):
         """
-        Run a diagnostic command to check PCIe devices.
+        Run a diagnostic command to check PCIe devices and write results to a log file.
         """
+        log_file = "PCIe_diagnostic_results.log"
         try:
             result = subprocess.run(
                 ["wmic", "path", "Win32_PnPEntity", "get", "/format:list"],
                 capture_output=True,
                 text=True
             )
-            print(result.stdout)
+            # Write the results to the log file
+            with open(log_file, "w") as file:
+                file.write("PCIe Diagnostic Results:\n")
+                file.write(result.stdout)
+            print(f"Diagnostic results written to {log_file}")
         except Exception as e:
-            print(f"An error occurred while running the diagnostic command: {e}")
+            error_message = f"An error occurred while running the diagnostic command: {e}"
+            print(error_message)
+            # Write the error to the log file
+            with open(log_file, "w") as file:
+                file.write(error_message)
 
     def run_all_diagnostics(self):
         """
@@ -133,7 +176,9 @@ class PCIeDiagnostics:
         self.check_driver_status()
         self.check_hardware_errors()
         self.check_power_state()
+        self.check_power_status()
         self.check_event_logs()
+        self.run_diagnostic_command()
 
 
 def main():
