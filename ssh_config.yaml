@@ -1,0 +1,4 @@
+hostname: your.remote.server
+port: 22
+username: your_username
+password: your_password
