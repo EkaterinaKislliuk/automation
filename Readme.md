@@ -5,7 +5,7 @@ This Python script provides functionality to establish an SSH connection to a re
 ## Features
 
 - Establish an SSH connection to a remote machine.
-- Execute shell commands on the remote machine.
+- Execute shell commands on the remote machine. 
 - Retrieve and display the output of executed commands.
 - Check if the SSH session is active.
 - Close the SSH session gracefully.
