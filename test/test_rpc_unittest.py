@@ -1,5 +1,6 @@
 import unittest
-from rpc_server import run_command
+import os
+from RPC_server import run_command
 
 class TestRPCServer(unittest.TestCase):
     def test_run_command_success(self):

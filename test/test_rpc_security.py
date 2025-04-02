@@ -1,5 +1,6 @@
 import unittest
-from rpc_server import run_command
+import os
+from RPC_server import run_command
 
 class TestRPCServerSecurity(unittest.TestCase):
     def test_command_injection(self):
