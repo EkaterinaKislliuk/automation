@@ -167,6 +167,115 @@ class PCIeDiagnostics:
             with open(log_file, "w") as file:
                 file.write(error_message)
 
+    def check_yellow_bang_devices(self):
+        """
+        Check all devices for a yellow bang (driver issues or incorrect installation).
+        """
+        print("Checking for devices with a yellow bang (driver issues)...")
+        for device in self.pcie_devices:
+            try:
+                # Check if the device has a ConfigManagerErrorCode property
+                if hasattr(device, "ConfigManagerErrorCode"):
+                    error_code = device.ConfigManagerErrorCode
+                    if error_code != 0:  # Non-zero error codes indicate an issue
+                        print(f"Device Name: {device['name']}")
+                        print(f"Device ID: {device['device_id']}")
+                        print(f"PNP Device ID: {device['pnp_device_id']}")
+                        print(f"Error Code: {error_code}")
+                        print(f"Issue: {self.get_error_description(error_code)}")
+                        print("-" * 40)
+            except Exception as e:
+                print(f"An error occurred while checking device: {device['name']}. Error: {e}")
+        print("Yellow bang device check completed.\n")
+
+    def powershell_check_yellow_bang_devices(self):
+        """
+        Use PowerShell to check all PCIe devices for a yellow bang (driver issues or incorrect installation).
+        """
+        print("Using PowerShell to check for devices with a yellow bang (driver issues)...")
+        try:
+            # PowerShell command to query devices with non-zero ConfigManagerErrorCode
+            powershell_command = (
+                "Get-WmiObject Win32_PnPEntity | "
+                "Where-Object { $_.ConfigManagerErrorCode -ne 0 } | "
+                "Select-Object Name, DeviceID, ConfigManagerErrorCode | "
+                "Format-Table -AutoSize"
+            )
+            
+            # Run the PowerShell command
+            result = subprocess.run(
+                ["powershell", "-Command", powershell_command],
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                # Print the output of the PowerShell command
+                print("Devices with a yellow bang (driver issues):")
+                print(result.stdout)
+            else:
+                print("PowerShell command failed to execute.")
+                print(f"Error: {result.stderr}")
+        except Exception as e:
+            print(f"An error occurred while using PowerShell to check for yellow bang devices: {e}")
+
+    def powershell_check_all_drivers_for_yellow_bang(self):
+        """
+        Use PowerShell to detect all available drivers in Windows and check them for yellow bang issues.
+        Outputs a list of devices with yellow bang problems.
+        """
+        print("Using PowerShell to check all drivers for yellow bang issues...")
+        try:
+            # PowerShell command to query all drivers with non-zero ConfigManagerErrorCode
+            powershell_command = (
+                "Get-WmiObject Win32_PnPEntity | "
+                "Where-Object { $_.ConfigManagerErrorCode -ne 0 } | "
+                "Select-Object Name, DeviceID, ConfigManagerErrorCode | "
+                "Format-Table -AutoSize"
+            )
+            
+            # Run the PowerShell command
+            result = subprocess.run(
+                ["powershell", "-Command", powershell_command],
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                # Print the output of the PowerShell command
+                print("Devices with yellow bang issues (driver problems):")
+                print(result.stdout)
+            else:
+                print("PowerShell command failed to execute.")
+                print(f"Error: {result.stderr}")
+        except Exception as e:
+            print(f"An error occurred while using PowerShell to check all drivers for yellow bang issues: {e}")
+
+    def get_error_description(self, error_code):
+        """
+        Get a human-readable description of the ConfigManagerErrorCode.
+        """
+        error_descriptions = {
+            1: "Device is not configured correctly.",
+            2: "Device is not working properly.",
+            3: "Driver for the device is not installed.",
+            4: "Driver for the device is installed incorrectly.",
+            5: "Device requires a resource that is not available.",
+            6: "The boot configuration for the device conflicts with other devices.",
+            7: "Cannot filter.",
+            8: "Driver loader for the device is missing.",
+            9: "Device is not working properly due to a firmware issue.",
+            10: "Device cannot start.",
+            11: "Device failed.",
+            12: "Device cannot find enough free resources.",
+            13: "Windows cannot verify the device's resources.",
+            14: "Device is being removed.",
+            15: "Device is disabled.",
+            16: "Device is not present, not working properly, or does not have all its drivers installed.",
+            17: "Device needs to be rebooted to work properly.",
+        }
+        return error_descriptions.get(error_code, "Unknown error code.")
+
     def run_all_diagnostics(self):
         """
         Run all diagnostic methods.
@@ -179,6 +288,11 @@ class PCIeDiagnostics:
         self.check_power_status()
         self.check_event_logs()
         self.run_diagnostic_command()
+        self.check_yellow_bang_devices()
+        self.powershell_check_yellow_bang_devices()
+
+        
+    
 
 
 def main():
