@@ -254,12 +254,15 @@ def main():
     """
     Main method to demonstrate AVL tree operations with random float values
     """
-    
-    
+       
     # Generate list of random float values
     num_nodes = randint(15,55)  # Number of nodes to generate
     random_keys = [round(uniform(-100.0, 100.0), 2) for _ in range(num_nodes)]
-    
+    for keys in random_keys:
+        if keys is None:
+            random_keys.remove(keys)
+
+    random_keys = list(set(random_keys))
     # Create and populate AVL tree
     avl_tree = AVLTree()
     
