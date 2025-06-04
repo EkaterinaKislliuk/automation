@@ -34,7 +34,12 @@ class RedBlackTree:
         """Insert a new key into the Red-Black tree"""
         if key is None:
             raise ValueError("Cannot insert None as a key")
-            
+          # Check for duplicate key before insertion
+        if self._find_node(key) is not None:
+            # Duplicate key found, do not insert
+            return
+
+
         node = RBNode(key)
         node.left = self.NIL
         node.right = self.NIL
