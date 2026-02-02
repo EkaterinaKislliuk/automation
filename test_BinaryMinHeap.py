@@ -47,7 +47,7 @@ def test_parent_consecutive_indices():
     expected = [-1, 0, 0, 1, 1, 2, 2, 3, 3, 4]
     assert results == expected
 
-
+ 
 
 if __name__ == "__main__":
     test_parent_typical_indices()
